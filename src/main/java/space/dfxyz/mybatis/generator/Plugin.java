@@ -146,12 +146,12 @@ public class Plugin extends PluginAdapter {
         if (prefix == null) prefix = "";
 
         XmlElement element = new XmlElement("if");
-        element.addAttribute(new Attribute("test", "limit != null"));
+        element.addAttribute(new Attribute("test", prefix + "limit != null"));
 
         XmlElement choose = new XmlElement("choose");
 
         XmlElement when = new XmlElement("when");
-        when.addAttribute(new Attribute("test", "offset != null"));
+        when.addAttribute(new Attribute("test", prefix + "offset != null"));
         when.addElement(new TextElement("limit ${" + prefix + "offset}, ${" + prefix + "limit}"));
 
         XmlElement otherwise = new XmlElement("otherwise");
@@ -383,7 +383,10 @@ public class Plugin extends PluginAdapter {
         method.setVisibility(JavaVisibility.PUBLIC);
 
         FullyQualifiedJavaType returnType = FullyQualifiedJavaType.getNewListInstance();
-        returnType.addTypeArgument(new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()));
+        FullyQualifiedJavaType entityType = FullyQualifiedJavaType.getNewMapInstance();
+        entityType.addTypeArgument(FullyQualifiedJavaType.getStringInstance());
+        entityType.addTypeArgument(FullyQualifiedJavaType.getObjectInstance());
+        returnType.addTypeArgument(entityType);
         method.setReturnType(returnType);
 
         Parameter selectClause = new Parameter(FullyQualifiedJavaType.getStringInstance(), "selectClause");
@@ -394,6 +397,7 @@ public class Plugin extends PluginAdapter {
         method.addParameter(example);
 
         interfaze.addImportedType(new FullyQualifiedJavaType("org.apache.ibatis.annotations.Param"));
+        interfaze.addImportedType(FullyQualifiedJavaType.getNewMapInstance());
         interfaze.addMethod(method);
     }
 
@@ -404,12 +408,12 @@ public class Plugin extends PluginAdapter {
 
         element.addAttribute(new Attribute("id", "selectManuallyByExample"));
         element.addAttribute(new Attribute("parameterType", "map"));
-        element.addAttribute(new Attribute("resultMap", introspectedTable.getBaseResultMapId()));
+        element.addAttribute(new Attribute("resultType", "map"));
 
         element.addElement(new TextElement("select"));
 
         XmlElement distinct = new XmlElement("if");
-        distinct.addAttribute(new Attribute("test", "distinct"));
+        distinct.addAttribute(new Attribute("test", "example.distinct"));
         distinct.addElement(new TextElement("distinct"));
         element.addElement(distinct);
 
@@ -424,7 +428,7 @@ public class Plugin extends PluginAdapter {
         element.addElement(example);
 
         XmlElement orderBy = new XmlElement("if");
-        orderBy.addAttribute(new Attribute("test", "orderByClause != null"));
+        orderBy.addAttribute(new Attribute("test", "example.orderByClause != null"));
         orderBy.addElement(new TextElement("order by ${example.orderByClause}"));
         element.addElement(orderBy);
 
@@ -440,7 +444,11 @@ public class Plugin extends PluginAdapter {
 
         method.setName("selectManuallyByPrimaryKey");
         method.setVisibility(JavaVisibility.PUBLIC);
-        method.setReturnType(new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()));
+
+        FullyQualifiedJavaType returnType = FullyQualifiedJavaType.getNewMapInstance();
+        returnType.addTypeArgument(FullyQualifiedJavaType.getStringInstance());
+        returnType.addTypeArgument(FullyQualifiedJavaType.getObjectInstance());
+        method.setReturnType(returnType);
 
         Parameter selectClause = new Parameter(FullyQualifiedJavaType.getStringInstance(), "selectClause");
         selectClause.addAnnotation("@Param(\"selectClause\")");
@@ -463,6 +471,7 @@ public class Plugin extends PluginAdapter {
         }
 
         interfaze.addImportedType(new FullyQualifiedJavaType("org.apache.ibatis.annotations.Param"));
+        interfaze.addImportedType(FullyQualifiedJavaType.getNewMapInstance());
         interfaze.addMethod(method);
     }
 
@@ -473,7 +482,7 @@ public class Plugin extends PluginAdapter {
 
         element.addAttribute(new Attribute("id", "selectManuallyByPrimaryKey"));
         element.addAttribute(new Attribute("parameterType", "map"));
-        element.addAttribute(new Attribute("resultMap", introspectedTable.getBaseResultMapId()));
+        element.addAttribute(new Attribute("resultType", "map"));
 
         element.addElement(new TextElement("select ${selectClause} from " +
                 introspectedTable.getAliasedFullyQualifiedTableNameAtRuntime()));

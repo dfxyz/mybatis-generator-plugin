@@ -26,10 +26,10 @@ CREATE TABLE `test1` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(32) NOT NULL,
   `password` varchar(32) NOT NULL,
-  `description` varchar(128) DEFAULT NULL,
+  `description` varchar(128) DEFAULT 'null',
   PRIMARY KEY (`id`),
   UNIQUE KEY `username_UNIQUE` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -51,7 +51,7 @@ DROP TABLE IF EXISTS `test2`;
 CREATE TABLE `test2` (
   `province_id` int(11) NOT NULL,
   `city_id` int(11) NOT NULL,
-  `description` varchar(128) DEFAULT NULL,
+  `description` varchar(128) DEFAULT 'null',
   PRIMARY KEY (`province_id`,`city_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -74,4 +74,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-10-21 17:25:49
+-- Dump completed on 2016-10-21 17:59:41

@@ -1,6 +1,7 @@
 package output.mappers;
 
 import java.util.List;
+import java.util.Map;
 import org.apache.ibatis.annotations.Param;
 import output.models.Test2;
 import output.models.Test2Example;
@@ -33,9 +34,9 @@ public interface Test2Mapper {
 
     int insertSelectiveOrUpdateManually(@Param("record") Test2 record, @Param("updateClause") String updateClause);
 
-    List<Test2> selectManuallyByExample(@Param("selectClause") String selectClause, @Param("example") Test2Example example);
+    List<Map<String, Object>> selectManuallyByExample(@Param("selectClause") String selectClause, @Param("example") Test2Example example);
 
-    Test2 selectManuallyByPrimaryKey(@Param("selectClause") String selectClause, @Param("key") Test2Key key);
+    Map<String, Object> selectManuallyByPrimaryKey(@Param("selectClause") String selectClause, @Param("key") Test2Key key);
 
     int updateManuallyByExample(@Param("updateClause") String updateClause, @Param("example") Test2Example example);
 
