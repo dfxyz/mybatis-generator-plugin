@@ -27,7 +27,7 @@ public class Plugin extends PluginAdapter {
             Field field,
             TopLevelClass topLevelClass, IntrospectedColumn introspectedColumn,
             IntrospectedTable introspectedTable,
-            Plugin.ModelClassType modelClassType) {
+            ModelClassType modelClassType) {
         field.setVisibility(JavaVisibility.PUBLIC);
         return true;
     }
@@ -38,7 +38,7 @@ public class Plugin extends PluginAdapter {
             Method method,
             TopLevelClass topLevelClass, IntrospectedColumn introspectedColumn,
             IntrospectedTable introspectedTable,
-            Plugin.ModelClassType modelClassType) {
+            ModelClassType modelClassType) {
         return false;
     }
 
@@ -48,7 +48,7 @@ public class Plugin extends PluginAdapter {
             Method method,
             TopLevelClass topLevelClass, IntrospectedColumn introspectedColumn,
             IntrospectedTable introspectedTable,
-            Plugin.ModelClassType modelClassType) {
+            ModelClassType modelClassType) {
         return false;
     }
 
@@ -170,6 +170,7 @@ public class Plugin extends PluginAdapter {
         element.addAttribute(new Attribute("parameterType", "map"));
 
         GeneratedKey gk = introspectedTable.getGeneratedKey();
+        String updateGK = "";
         if (gk != null) {
             IntrospectedColumn introspectedColumn = introspectedTable.getColumn(gk.getColumn());
             if (introspectedColumn != null) {
@@ -180,6 +181,8 @@ public class Plugin extends PluginAdapter {
                 } else {
                     element.addElement(getSelectKeyElement(introspectedColumn, gk));
                 }
+                updateGK = String.format(", %s = last_insert_id(%s)",
+                        introspectedColumn.getActualColumnName(), introspectedColumn.getActualColumnName());
             }
         }
         StringBuilder insertClause = new StringBuilder();
@@ -227,8 +230,9 @@ public class Plugin extends PluginAdapter {
             element.addElement(new TextElement(clause));
         }
 
-        // `id = last_insert_id(id)` ensures the id returned references the inserted entity or the updated entity
-        element.addElement(new TextElement("on duplicate key update ${updateClause}, id = last_insert_id(id)"));
+        // if table has a generated key, append string like `id = last_insert_id(id)` to updateClause
+        // to ensures the returned id always references the inserted entity or the updated entity
+        element.addElement(new TextElement("on duplicate key update ${updateClause}" + updateGK));
 
         parent.addElement(element);
     }
@@ -262,6 +266,7 @@ public class Plugin extends PluginAdapter {
         element.addAttribute(new Attribute("parameterType", "map"));
 
         GeneratedKey gk = introspectedTable.getGeneratedKey();
+        String updateGK = "";
         if (gk != null) {
             IntrospectedColumn introspectedColumn = introspectedTable.getColumn(gk.getColumn());
             if (introspectedColumn != null) {
@@ -272,6 +277,8 @@ public class Plugin extends PluginAdapter {
                 } else {
                     element.addElement(getSelectKeyElement(introspectedColumn, gk));
                 }
+                updateGK = String.format(", %s = last_insert_id(%s)",
+                        introspectedColumn.getActualColumnName(), introspectedColumn.getActualColumnName());
             }
         }
 
@@ -347,8 +354,9 @@ public class Plugin extends PluginAdapter {
             valuesTrimElement.addElement(valuesNotNullElement);
         }
 
-        // `id = last_insert_id(id)` ensures the id returned references the inserted entity or the updated entity
-        element.addElement(new TextElement("on duplicate key update ${updateClause}, id = last_insert_id(id)"));
+        // if table has a generated key, append string like `id = last_insert_id(id)` to updateClause
+        // to ensures the returned id always references the inserted entity or the updated entity
+        element.addElement(new TextElement("on duplicate key update ${updateClause}" + updateGK));
 
         parent.addElement(element);
     }
