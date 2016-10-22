@@ -2,11 +2,9 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="output.mappers.Test2Mapper">
   <resultMap id="BaseResultMap" type="output.models.Test2">
-    <constructor>
-      <idArg column="province_id" javaType="java.lang.Integer" jdbcType="INTEGER" />
-      <idArg column="city_id" javaType="java.lang.Integer" jdbcType="INTEGER" />
-      <arg column="description" javaType="java.lang.String" jdbcType="VARCHAR" />
-    </constructor>
+    <id column="province_id" jdbcType="INTEGER" property="provinceId" />
+    <id column="city_id" jdbcType="INTEGER" property="cityId" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
   </resultMap>
   <sql id="Example_Where_Clause">
     <where>
@@ -195,7 +193,7 @@
       description)
     values (#{record.provinceId,jdbcType=INTEGER}, #{record.cityId,jdbcType=INTEGER}, 
       #{record.description,jdbcType=VARCHAR})
-    on duplicate key update ${updateClause}
+    on duplicate key update ${updateClause}, id = last_insert_id(id)
   </insert>
   <insert id="insertSelectiveOrUpdateManually" parameterType="map">
     insert into test2
@@ -221,9 +219,9 @@
         #{record.description,jdbcType=VARCHAR},
       </if>
     </trim>
-    on duplicate key update ${updateClause}
+    on duplicate key update ${updateClause}, id = last_insert_id(id)
   </insert>
-  <select id="selectManuallyByExample" parameterType="map" resultType="map">
+  <select id="selectManuallyByExample" parameterType="map" resultMap="BaseResultMap">
     select
     <if test="example.distinct">
       distinct
@@ -246,21 +244,21 @@
       </choose>
     </if>
   </select>
-  <select id="selectManuallyByPrimaryKey" parameterType="map" resultType="map">
+  <select id="selectManuallyByPrimaryKey" parameterType="map" resultMap="BaseResultMap">
     select ${selectClause} from test2
     where province_id = #{key.provinceId,jdbcType=INTEGER}
       and city_id = #{key.cityId,jdbcType=INTEGER}
   </select>
   <update id="updateManuallyByExample" parameterType="map">
     update test2
-    set {$updateClause}
+    set ${updateClause}
     <if test="_parameter != null">
       <include refid="Update_By_Example_Where_Clause" />
     </if>
   </update>
   <update id="updateManuallyByPrimaryKey" parameterType="map">
     update test2
-    set {$updateClause}
+    set ${updateClause}
     where province_id = #{key.provinceId,jdbcType=INTEGER}
       and city_id = #{key.cityId,jdbcType=INTEGER}
   </update>

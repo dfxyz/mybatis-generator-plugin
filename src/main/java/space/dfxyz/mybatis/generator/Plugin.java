@@ -141,29 +141,6 @@ public class Plugin extends PluginAdapter {
         return true;
     }
 
-    // generate XML element for limit/offset clause
-    private XmlElement getLimitOffsetClauseElement(String prefix) {
-        if (prefix == null) prefix = "";
-
-        XmlElement element = new XmlElement("if");
-        element.addAttribute(new Attribute("test", prefix + "limit != null"));
-
-        XmlElement choose = new XmlElement("choose");
-
-        XmlElement when = new XmlElement("when");
-        when.addAttribute(new Attribute("test", prefix + "offset != null"));
-        when.addElement(new TextElement("limit ${" + prefix + "offset}, ${" + prefix + "limit}"));
-
-        XmlElement otherwise = new XmlElement("otherwise");
-        otherwise.addElement(new TextElement("limit ${" + prefix + "limit}"));
-
-        choose.addElement(when);
-        choose.addElement(otherwise);
-
-        element.addElement(choose);
-        return element;
-    }
-
     // add insertOrUpdateManually() method
     private void addInsertOrUpdateManuallyMethod(Interface interfaze, IntrospectedTable introspectedTable) {
         Method method = new Method();
@@ -198,10 +175,10 @@ public class Plugin extends PluginAdapter {
             if (introspectedColumn != null) {
                 if (gk.isJdbcStandard()) {
                     element.addAttribute(new Attribute("useGeneratedKeys", "true"));
-                    element.addAttribute(new Attribute("keyProperty", introspectedColumn.getJavaProperty()));
+                    element.addAttribute(new Attribute("keyProperty", "record." + introspectedColumn.getJavaProperty()));
                     element.addAttribute(new Attribute("keyColumn", introspectedColumn.getActualColumnName()));
                 } else {
-                    element.addElement(getSelectKey(introspectedColumn, gk));
+                    element.addElement(getSelectKeyElement(introspectedColumn, gk));
                 }
             }
         }
@@ -250,7 +227,8 @@ public class Plugin extends PluginAdapter {
             element.addElement(new TextElement(clause));
         }
 
-        element.addElement(new TextElement("on duplicate key update ${updateClause}"));
+        // `id = last_insert_id(id)` ensures the id returned references the inserted entity or the updated entity
+        element.addElement(new TextElement("on duplicate key update ${updateClause}, id = last_insert_id(id)"));
 
         parent.addElement(element);
     }
@@ -289,10 +267,10 @@ public class Plugin extends PluginAdapter {
             if (introspectedColumn != null) {
                 if (gk.isJdbcStandard()) {
                     element.addAttribute(new Attribute("useGeneratedKeys", "true"));
-                    element.addAttribute(new Attribute("keyProperty", introspectedColumn.getJavaProperty()));
+                    element.addAttribute(new Attribute("keyProperty", "record." + introspectedColumn.getJavaProperty()));
                     element.addAttribute(new Attribute("keyColumn", introspectedColumn.getActualColumnName()));
                 } else {
-                    element.addElement(getSelectKey(introspectedColumn, gk));
+                    element.addElement(getSelectKeyElement(introspectedColumn, gk));
                 }
             }
         }
@@ -369,7 +347,8 @@ public class Plugin extends PluginAdapter {
             valuesTrimElement.addElement(valuesNotNullElement);
         }
 
-        element.addElement(new TextElement("on duplicate key update ${updateClause}"));
+        // `id = last_insert_id(id)` ensures the id returned references the inserted entity or the updated entity
+        element.addElement(new TextElement("on duplicate key update ${updateClause}, id = last_insert_id(id)"));
 
         parent.addElement(element);
     }
@@ -383,10 +362,7 @@ public class Plugin extends PluginAdapter {
         method.setVisibility(JavaVisibility.PUBLIC);
 
         FullyQualifiedJavaType returnType = FullyQualifiedJavaType.getNewListInstance();
-        FullyQualifiedJavaType entityType = FullyQualifiedJavaType.getNewMapInstance();
-        entityType.addTypeArgument(FullyQualifiedJavaType.getStringInstance());
-        entityType.addTypeArgument(FullyQualifiedJavaType.getObjectInstance());
-        returnType.addTypeArgument(entityType);
+        returnType.addTypeArgument(new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()));
         method.setReturnType(returnType);
 
         Parameter selectClause = new Parameter(FullyQualifiedJavaType.getStringInstance(), "selectClause");
@@ -397,7 +373,6 @@ public class Plugin extends PluginAdapter {
         method.addParameter(example);
 
         interfaze.addImportedType(new FullyQualifiedJavaType("org.apache.ibatis.annotations.Param"));
-        interfaze.addImportedType(FullyQualifiedJavaType.getNewMapInstance());
         interfaze.addMethod(method);
     }
 
@@ -408,7 +383,7 @@ public class Plugin extends PluginAdapter {
 
         element.addAttribute(new Attribute("id", "selectManuallyByExample"));
         element.addAttribute(new Attribute("parameterType", "map"));
-        element.addAttribute(new Attribute("resultType", "map"));
+        element.addAttribute(new Attribute("resultMap", introspectedTable.getBaseResultMapId()));
 
         element.addElement(new TextElement("select"));
 
@@ -444,11 +419,7 @@ public class Plugin extends PluginAdapter {
 
         method.setName("selectManuallyByPrimaryKey");
         method.setVisibility(JavaVisibility.PUBLIC);
-
-        FullyQualifiedJavaType returnType = FullyQualifiedJavaType.getNewMapInstance();
-        returnType.addTypeArgument(FullyQualifiedJavaType.getStringInstance());
-        returnType.addTypeArgument(FullyQualifiedJavaType.getObjectInstance());
-        method.setReturnType(returnType);
+        method.setReturnType(new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()));
 
         Parameter selectClause = new Parameter(FullyQualifiedJavaType.getStringInstance(), "selectClause");
         selectClause.addAnnotation("@Param(\"selectClause\")");
@@ -471,7 +442,6 @@ public class Plugin extends PluginAdapter {
         }
 
         interfaze.addImportedType(new FullyQualifiedJavaType("org.apache.ibatis.annotations.Param"));
-        interfaze.addImportedType(FullyQualifiedJavaType.getNewMapInstance());
         interfaze.addMethod(method);
     }
 
@@ -482,7 +452,7 @@ public class Plugin extends PluginAdapter {
 
         element.addAttribute(new Attribute("id", "selectManuallyByPrimaryKey"));
         element.addAttribute(new Attribute("parameterType", "map"));
-        element.addAttribute(new Attribute("resultType", "map"));
+        element.addAttribute(new Attribute("resultMap", introspectedTable.getBaseResultMapId()));
 
         element.addElement(new TextElement("select ${selectClause} from " +
                 introspectedTable.getAliasedFullyQualifiedTableNameAtRuntime()));
@@ -544,7 +514,7 @@ public class Plugin extends PluginAdapter {
         element.addAttribute(new Attribute("parameterType", "map"));
 
         element.addElement(new TextElement("update " + introspectedTable.getAliasedFullyQualifiedTableNameAtRuntime()));
-        element.addElement(new TextElement("set {$updateClause}"));
+        element.addElement(new TextElement("set ${updateClause}"));
 
         XmlElement example = new XmlElement("if");
         example.addAttribute(new Attribute("test", "_parameter != null"));
@@ -598,7 +568,7 @@ public class Plugin extends PluginAdapter {
         element.addAttribute(new Attribute("parameterType", "map"));
 
         element.addElement(new TextElement("update " + introspectedTable.getAliasedFullyQualifiedTableNameAtRuntime()));
-        element.addElement(new TextElement("set {$updateClause}"));
+        element.addElement(new TextElement("set ${updateClause}"));
 
         boolean addPrefix = introspectedTable.getRules().generatePrimaryKeyClass();
         boolean and = false;
@@ -629,15 +599,39 @@ public class Plugin extends PluginAdapter {
         parent.addElement(element);
     }
 
-    // copied from AbstractXmlElementGenerator,
-    // should return an XmlElement for the select key used to automatically generate keys
-    private XmlElement getSelectKey(
+    // generate XML element for limit/offset clause
+    private XmlElement getLimitOffsetClauseElement(String prefix) {
+        if (prefix == null) prefix = "";
+
+        XmlElement element = new XmlElement("if");
+        element.addAttribute(new Attribute("test", prefix + "limit != null"));
+
+        XmlElement choose = new XmlElement("choose");
+
+        XmlElement when = new XmlElement("when");
+        when.addAttribute(new Attribute("test", prefix + "offset != null"));
+        when.addElement(new TextElement("limit ${" + prefix + "offset}, ${" + prefix + "limit}"));
+
+        XmlElement otherwise = new XmlElement("otherwise");
+        otherwise.addElement(new TextElement("limit ${" + prefix + "limit}"));
+
+        choose.addElement(when);
+        choose.addElement(otherwise);
+
+        element.addElement(choose);
+        return element;
+    }
+
+    // copied from AbstractXmlElementGenerator, used for selectOrUpdateManually() / selectSelectiveOrUpdateManually()
+    // should return an XmlElement for the select key used to automatically generate keys.
+    private XmlElement getSelectKeyElement(
             IntrospectedColumn introspectedColumn, GeneratedKey generatedKey) {
         XmlElement element = new XmlElement("selectKey");
 
         String identityColumnType = introspectedColumn.getFullyQualifiedJavaType().getFullyQualifiedName();
         element.addAttribute(new Attribute("resultType", identityColumnType));
-        element.addAttribute(new Attribute("keyProperty", introspectedColumn.getJavaProperty()));
+        // add "record." prefix to `keyProperty` for selectOrUpdateManually() / selectSelectiveOrUpdateManually()
+        element.addAttribute(new Attribute("keyProperty", "record." + introspectedColumn.getJavaProperty()));
         element.addAttribute(new Attribute("order", generatedKey.getMyBatis3Order()));
         element.addElement(new TextElement(generatedKey.getRuntimeSqlStatement()));
 

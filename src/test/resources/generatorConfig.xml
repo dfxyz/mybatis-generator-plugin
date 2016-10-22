@@ -13,14 +13,15 @@
                         userId="root" password="root"/>
         <javaModelGenerator targetPackage="output.models"
                             targetProject="${mybatis.generator.javaOutputDirectory}">
-            <property name="constructorBased" value="true"/>
         </javaModelGenerator>
         <sqlMapGenerator targetPackage="output.mappers"
                          targetProject="${mybatis.generator.xmlOutputDirectory}"/>
         <javaClientGenerator type="XMLMAPPER"
                              targetPackage="output.mappers"
                              targetProject="${mybatis.generator.javaOutputDirectory}"/>
-        <table tableName="test1"/>
+        <table tableName="test1">
+            <generatedKey identity="true" column="id" sqlStatement="MySql"/>
+        </table>
         <table tableName="test2"/>
     </context>
 </generatorConfiguration>
