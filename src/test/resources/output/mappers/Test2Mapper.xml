@@ -193,7 +193,7 @@
       description)
     values (#{record.provinceId,jdbcType=INTEGER}, #{record.cityId,jdbcType=INTEGER}, 
       #{record.description,jdbcType=VARCHAR})
-    on duplicate key update ${updateClause}, id = last_insert_id(id)
+    on duplicate key update ${updateClause}
   </insert>
   <insert id="insertSelectiveOrUpdateManually" parameterType="map">
     insert into test2
@@ -219,7 +219,7 @@
         #{record.description,jdbcType=VARCHAR},
       </if>
     </trim>
-    on duplicate key update ${updateClause}, id = last_insert_id(id)
+    on duplicate key update ${updateClause}
   </insert>
   <select id="selectManuallyByExample" parameterType="map" resultMap="BaseResultMap">
     select
